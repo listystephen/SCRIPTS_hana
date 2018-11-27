@@ -1,0 +1,145 @@
+#!/bin/bash
+
+function get_db_type_hostagent
+{
+
+dbtype=`/usr/sap/hostctrl/exe/saphostctrl -function ListDatabases|grep Type|awk -F',' '{print $4}'|awk '{print $2}'`
+RC=$?
+        if [ $RC -eq 0 ]; then
+                echo $dbtype
+                return 0
+        else
+                return 1
+        fi
+
+}
+
+
+
+function get_db_type_manual
+{
+
+echo "getting status from scripts"
+
+dbtypearray=("check_db_hana.sh" "check_db_hana.sh" "check_db_hana.sh" "check_db_hana.sh" "check_db_hana.sh" "check_db_hana.sh")
+
+        for dbtypescript in "${dbtypearray[@]}"
+        do
+                if [ -f check_db_hana.sh ]; then
+                        ./check_db_hana.sh
+                        RC=$?
+                                echo $RC
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+        done
+
+}
+
+function execution_db_type_info
+
+{
+
+        if [ -f /usr/sap/hostctrl/exe/saphostctrl ]; then
+                get_db_type_hostagent
+                        RC=$?
+                                if [ $RC -eq 0 ]; then
+                                        dbtype_check_flag=0
+                                        return 0
+                                else
+                                        get_db_type_manual
+                                        dbtype_check_flag=1
+                                fi
+
+        else
+                get_db_type_manual
+                dbtype_check_flag=1
+        fi
+}
+
+
+function execute_script
+{
+
+case $dbtype in
+        db6)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        hdb)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        maxdb)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        ora)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        syb)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        sybiq)
+                if [ -f check_db_hana.sh ]; then
+                      ./check_db_hana.sh
+                        RC=$?
+                                return $RC
+                else
+                        echo ERROR: Not able to find check_db_hana.sh
+                        return 1
+                fi
+                ;;
+        *)
+                echo "Error: Unknown DB Type"
+                return 1
+                ;;
+  esac
+
+
+}
+function main
+{
+execution_db_type_info
+
+if [ $dbtype_check_flag -eq 0 ]; then
+        execute_script
+fi
+}
+
+#main
+get_db_type_manual

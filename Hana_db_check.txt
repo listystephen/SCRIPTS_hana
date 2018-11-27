@@ -1,0 +1,65 @@
+#!/bin/bash
+
+
+function sapservices
+{
+        if [ -f /usr/sap/sapservices ]; then
+                sapservicesdata=`cat /usr/sap/sapservices|grep HDB|grep -v "#" |cut -d';' -f1  |awk -F'=' {'print $2'}|cut -d ':' -f1`
+#       echo $sapservicesdata
+#       echo  $sapservicesdata| cut -d ' ' --output-delimiter=$'\n' -f 1-
+                 if [[ -z $sapservicesdata ]]; then
+                        echo "OK: Not an HDB Host"
+                        exit 0
+                else
+                        while read -r sapservicesinstance
+                        do
+
+
+                                value_assign
+                        done < <(echo $sapservicesdata| cut -d ' ' --output-delimiter=$'\n' -f 1- ) # tr -s " " "\n")
+                fi
+        else
+                echo "OK: Not an HDB Host"
+                exit 0
+
+
+
+
+        fi
+}
+
+function value_assign
+{
+        instance_directory=` echo $sapservicesinstance|rev|cut -d/ -f2-|rev`
+        sid=` echo $sapservicesinstance|cut -d '/' -f4`
+        LOWER_SID=`echo $sid| awk '{ print tolower($1) }'`
+#       echo $instance_directory $sid
+        DBUSER=$LOWER_SID"adm"
+        hdb_version
+}
+
+function hdb_version
+{
+
+
+        if [[ -z $instance_directory ]]; then
+                echo "OK: Not an HDB Host"
+                exit 0
+        else
+                        su - $DBUSER -c "source $instance_directory/HDBSettings.csh; $instance_directory/HDB version" > tmp 2>&1
+
+                        RC=$?
+                                hdb_version=`cat tmp|grep version:|awk '{print $2}'`
+
+                        hdb_main_version=`echo $hdb_version |awk -F'.' '{print $1}'`
+                        hdb_sp_version=`echo $hdb_version|awk -F'.' '{print $3}'|cut -c 1-2`
+
+                                if [ $RC -eq 0 ] && ! [ -z $hdb_version ]; then
+                                        echo "$sid: $hdb_version"
+                                else
+                                        echo ERROR: Not able to find HDB Version
+                                        exit 1
+                                fi
+        fi
+}
+sapservices
